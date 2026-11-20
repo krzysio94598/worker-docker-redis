@@ -9,9 +9,21 @@ let client;
  */
 async function getRedisClient(options = {}) {
   if (!client) {
+    const redisHost = process.env.REDIS_HOST || 'localhost';
+    const redisPort = process.env.REDIS_PORT || 6379;
+
     const defaultOptions = {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: process.env.REDIS_PORT || 6379,
+      socket: {
+        host: redisHost,
+        port: redisPort,
+        reconnectStrategy: (retries) => {
+          if (retries > 10) {
+            console.error('Redis reconnection failed after 10 retries');
+            return new Error('Redis connection failed');
+          }
+          return retries * 100;
+        },
+      },
       ...options,
     };
 
@@ -22,7 +34,7 @@ async function getRedisClient(options = {}) {
     });
 
     client.on('connect', () => {
-      console.log('Connected to Redis');
+      console.log(`Connected to Redis at ${redisHost}:${redisPort}`);
     });
   }
 
