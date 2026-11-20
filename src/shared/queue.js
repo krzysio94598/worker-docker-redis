@@ -21,6 +21,24 @@ async function getJobStatus(jobId) {
 }
 
 /**
+ * Get all jobs with their statuses
+ * @returns {Promise<Array>} - Array of { id, status }
+ */
+async function getAllJobs() {
+  const redis = await getRedisClient();
+  const keys = await redis.keys('job:*');
+  
+  const jobs = [];
+  for (const key of keys) {
+    const jobId = key.replace('job:', '');
+    const status = await redis.hGet(key, 'status');
+    jobs.push({ id: jobId, status });
+  }
+  
+  return jobs.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/**
  * Update job status in Redis
  * @param {Object} job - { id, documentId }
  * @param {string} status - 'queued', 'processing', 'completed', 'failed'
@@ -50,6 +68,7 @@ async function retryJob(job, maxRetries = 3) {
 module.exports = {
   enqueueJob,
   getJobStatus,
+  getAllJobs,
   updateJobStatus,
   retryJob,
 };

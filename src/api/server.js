@@ -1,6 +1,6 @@
 const express = require('express');
 const { validateJob } = require('../shared/validation');
-const { enqueueJob, getJobStatus } = require('../shared/queue');
+const { enqueueJob, getJobStatus, getAllJobs } = require('../shared/queue');
 const { isRedisConnected } = require('../shared/redis');
 
 const app = express();
@@ -76,6 +76,26 @@ app.post('/jobs', async (req, res) => {
 });
 
 /**
+ * Get all jobs
+ * GET /jobs
+ */
+app.get('/jobs', async (req, res) => {
+  try {
+    const jobs = await getAllJobs();
+    res.status(200).json({
+      count: jobs.length,
+      jobs,
+    });
+  } catch (error) {
+    console.error('Error getting jobs:', error.message);
+    res.status(500).json({
+      error: 'Failed to get jobs',
+      message: error.message,
+    });
+  }
+});
+
+/**
  * Get job status
  * GET /jobs/:jobId
  */
@@ -114,6 +134,7 @@ app.get('/', (req, res) => {
     endpoints: {
       health: 'GET /health',
       ready: 'GET /ready',
+      listJobs: 'GET /jobs',
       enqueueJob: 'POST /jobs',
       getJobStatus: 'GET /jobs/:jobId',
     },

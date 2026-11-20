@@ -12,6 +12,7 @@
     "api:dev": "nodemon src/api/server.js",
     "worker:dev": "nodemon src/worker/worker.js",
     "api:dev:job:create": "node scripts/create-job.js",
+    "api:dev:jobs:list": "node scripts/list-jobs.js",
     "docker:up": "docker-compose up --build",
     "docker:down": "docker-compose down",
     "test": "npm run test:shared && npm run test:api && npm run test:worker",
