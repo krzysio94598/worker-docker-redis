@@ -103,7 +103,20 @@ async function startWorker() {
       }
 
       const jobData = result[1];
-      const job = JSON.parse(jobData);
+      
+      if (!jobData) {
+        console.error('❌ Received null/undefined job data from queue');
+        continue;
+      }
+
+      let job;
+      try {
+        job = JSON.parse(jobData);
+      } catch (parseError) {
+        console.error(`❌ Failed to parse job JSON: ${jobData}`);
+        console.error(`   Error: ${parseError.message}`);
+        continue;
+      }
 
       console.log(`\n[Job ${job.id}] Dequeued from queue`);
 
@@ -111,6 +124,7 @@ async function startWorker() {
       await processWithRetry(job);
     } catch (error) {
       console.error('Worker error:', error.message);
+      console.error('Stack:', error.stack);
       // Sleep before retrying the main loop
       await sleep(5000);
     }
