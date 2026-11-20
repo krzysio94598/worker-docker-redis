@@ -1,12 +1,12 @@
 const { getRedisClient } = require('./redis');
 
 /**
- * Enqueue a job to the job-queue queue
+ * Enqueue a job to the document-jobs queue
  * @param {Object} job - { id, documentId }
  */
 async function enqueueJob(job) {
   const redis = await getRedisClient();
-  await redis.lPush('job-queue', JSON.stringify(job));
+  await redis.lPush('document-jobs', JSON.stringify(job));
   await redis.hSet(`job:${job.id}`, 'status', 'queued');
 }
 
@@ -59,7 +59,7 @@ async function retryJob(job, maxRetries = 3) {
   if (retryCount < maxRetries) {
     job.retryCount = retryCount + 1;
     const redis = await getRedisClient();
-    await redis.lPush('job-queue', JSON.stringify(job));
+    await redis.lPush('document-jobs', JSON.stringify(job));
   } else {
     await updateJobStatus(job, 'failed');
   }

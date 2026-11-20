@@ -24,7 +24,7 @@ async function migrateJobs() {
     }
     
     // Check current queue length
-    const currentQueueLen = await redis.lLen('job-queue');
+    const currentQueueLen = await redis.lLen('document-jobs');
     console.log(`Current queue length: ${currentQueueLen}\n`);
     
     // Re-enqueue each job
@@ -36,7 +36,7 @@ async function migrateJobs() {
       // Only re-enqueue if status is 'queued' or 'processing'
       if (status === 'queued' || status === 'processing') {
         const job = { id: jobId, documentId: `doc-${jobId}` };
-        const pushResult = await redis.lPush('job-queue', JSON.stringify(job));
+        const pushResult = await redis.lPush('document-jobs', JSON.stringify(job));
         console.log(`✅ Re-enqueued: ${jobId} (list len now: ${pushResult})`);
         enqueued++;
       } else {
@@ -48,11 +48,11 @@ async function migrateJobs() {
     console.log(`   Re-enqueued: ${enqueued} jobs`);
     
     // Check queue length multiple times to verify
-    let queueLen = await redis.lLen('job-queue');
+    let queueLen = await redis.lLen('document-jobs');
     console.log(`   Queue length (immediate): ${queueLen}`);
     
     // Double check by listing items
-    const items = await redis.lRange('job-queue', 0, -1);
+    const items = await redis.lRange('document-jobs', 0, -1);
     console.log(`   Items in queue (by range): ${items.length}`);
     
     if (items.length > 0) {
