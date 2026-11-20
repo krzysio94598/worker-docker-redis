@@ -95,14 +95,14 @@ async function startWorker() {
   while (true) {
     try {
       // Block and pop a job from the queue (0 means block indefinitely)
-      const result = await redis.sendCommand(['BRPOP', 'job-queue', '0']);
+      const result = await redis.brPop('job-queue', 0);
 
       if (!result) {
         console.log('No job received');
         continue;
       }
 
-      const jobData = result[1];
+      const jobData = result.element;
       
       if (!jobData) {
         console.error('❌ Received null/undefined job data from queue');
