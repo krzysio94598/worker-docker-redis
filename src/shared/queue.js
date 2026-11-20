@@ -1,13 +1,13 @@
 const { getRedisClient } = require('./redis');
 
 /**
- * Enqueue a job to the document-jobs queue
+ * Enqueue a job to the job-queue queue
  * @param {Object} job - { id, documentId }
  */
 async function enqueueJob(job) {
   const redis = await getRedisClient();
-  await redis.lPush('document-jobs', JSON.stringify(job));
-  await redis.hSet(`job:${job.id}`, 'status', 'queued');
+  await redis.sendCommand(['LPUSH', 'job-queue', JSON.stringify(job)]);
+  await redis.sendCommand(['HSET', `job:${job.id}`, 'status', 'queued']);
 }
 
 /**
@@ -17,7 +17,7 @@ async function enqueueJob(job) {
  */
 async function getJobStatus(jobId) {
   const redis = await getRedisClient();
-  return redis.hGet(`job:${jobId}`, 'status');
+  return redis.sendCommand(['HGET', `job:${jobId}`, 'status']);
 }
 
 /**
@@ -26,12 +26,12 @@ async function getJobStatus(jobId) {
  */
 async function getAllJobs() {
   const redis = await getRedisClient();
-  const keys = await redis.keys('job:*');
+  const keys = await redis.sendCommand(['KEYS', 'job:*']);
   
   const jobs = [];
   for (const key of keys) {
     const jobId = key.replace('job:', '');
-    const status = await redis.hGet(key, 'status');
+    const status = await redis.sendCommand(['HGET', key, 'status']);
     jobs.push({ id: jobId, status });
   }
   
@@ -45,7 +45,7 @@ async function getAllJobs() {
  */
 async function updateJobStatus(job, status) {
   const redis = await getRedisClient();
-  await redis.hSet(`job:${job.id}`, 'status', status);
+  await redis.sendCommand(['HSET', `job:${job.id}`, 'status', status]);
 }
 
 /**
@@ -59,7 +59,7 @@ async function retryJob(job, maxRetries = 3) {
   if (retryCount < maxRetries) {
     job.retryCount = retryCount + 1;
     const redis = await getRedisClient();
-    await redis.lPush('document-jobs', JSON.stringify(job));
+    await redis.sendCommand(['LPUSH', 'job-queue', JSON.stringify(job)]);
   } else {
     await updateJobStatus(job, 'failed');
   }

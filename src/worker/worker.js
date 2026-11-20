@@ -85,7 +85,7 @@ async function processWithRetry(job) {
 
 /**
  * Start the worker service
- * Polls the document-jobs queue and processes jobs
+ * Polls the job-queue queue and processes jobs
  */
 async function startWorker() {
   console.log('Worker service started');
@@ -95,7 +95,7 @@ async function startWorker() {
   while (true) {
     try {
       // Block and pop a job from the queue (0 means block indefinitely)
-      const result = await redis.brPop('document-jobs', 0);
+      const result = await redis.sendCommand(['BRPOP', 'job-queue', '0']);
 
       if (!result) {
         console.log('No job received');
