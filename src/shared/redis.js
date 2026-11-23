@@ -3,6 +3,28 @@ const redis = require('redis');
 let client;
 
 /**
+ * Retry a Redis operation until it succeeds.
+ * @param {() => Promise<*>} operation
+ * @returns {Promise<*>}
+ */
+async function retryRedisOperation(operation) {
+  let delayMs = 1000;
+
+  while (true) {
+    try {
+      return await operation();
+    } catch (error) {
+      console.error(
+        `Redis operation failed; retrying in ${delayMs}ms:`,
+        error.message
+      );
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+      delayMs = Math.min(delayMs * 2, 30000);
+    }
+  }
+}
+
+/**
  * Get a shared Redis client. The client is created lazily and connected once.
  * @param {Object} options - Redis client options
  * @returns {Promise<Object>} - Redis client instance
@@ -70,6 +92,7 @@ async function isRedisConnected() {
 }
 
 module.exports = {
+  retryRedisOperation,
   getRedisClient,
   closeRedisClient,
   isRedisConnected,

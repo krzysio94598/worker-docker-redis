@@ -131,7 +131,13 @@ Jobs transition through these states:
 - **Polling:** Blocks on Redis `brPop` to fetch jobs from `document-jobs` queue
 - **Retry Logic:** Up to 3 retries with exponential backoff (1s → 2s → 4s up to 30s max)
 - **Idempotency:** Skips processing if job is already completed
+- **Idempotency Keys:** Persists a claim for each job/document operation and suppresses duplicate processing
 - **Graceful Shutdown:** Handles SIGTERM and SIGINT signals
+
+Document-processing integrations should forward the supplied idempotency key to
+the downstream system that produces side effects. This allows that system to
+reject duplicate requests even when a worker crashes after the side effect but
+before recording completion.
 
 ## Testing
 
